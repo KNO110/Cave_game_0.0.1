@@ -1,0 +1,188 @@
+using System;
+namespace EnergySystemExample
+
+    ////Powered by Ak1ne
+{
+    class Program
+    {
+        static int energy = 10;
+        static int health = 20;
+        static int gridSize = 10;
+        static char[,] grid = new char[gridSize, gridSize];
+        static Random random = new Random();
+        static int playerX = 0;
+        static int playerY = 0;
+        static int exitX = gridSize - 1;
+        static int exitY = gridSize - 1;
+
+        static void InitializeGrid()
+        {
+            for (int i = 0; i < gridSize; i++)
+            {
+                for (int j = 0; j < gridSize; j++)
+                {
+                    grid[i, j] = '.';
+                }
+            }
+
+            int coffeeCount = 5;
+            int wallCount = 15;
+            int enemyCount = 4;
+
+            while (coffeeCount > 0)
+            {
+                int x = random.Next(0, gridSize);
+                int y = random.Next(0, gridSize);
+
+                if (grid[x, y] == '.' && (x != exitX || y != exitY))
+                {
+                    grid[x, y] = 'U';
+                    coffeeCount--;
+                }
+            }
+
+            while (wallCount > 0)
+            {
+                int x = random.Next(0, gridSize);
+                int y = random.Next(0, gridSize);
+
+                if (grid[x, y] == '.'
+                    && (x != playerX || y != playerY)
+                    && (x != exitX || y != exitY))
+                {
+                    grid[x, y] = '#';
+                    wallCount--;
+                }
+            }
+
+            while (enemyCount > 0)
+            {
+                int x = random.Next(0, gridSize);
+                int y = random.Next(0, gridSize);
+
+                if (grid[x, y] == '.'
+                    && (x != playerX || y != playerY)
+                    && (x != exitX || y != exitY))
+                {
+                    grid[x, y] = '%'; // обозначение врага
+                    enemyCount--;
+                }
+            }
+
+            grid[exitY, exitX] = 'E';
+        }
+
+        static void DrawGrid()
+        {
+            Console.Clear();
+            for (int i = 0; i < gridSize; i++)
+            {
+                for (int j = 0; j < gridSize; j++)
+                {
+                    if (i == playerY && j == playerX)
+                    {
+                        Console.Write("& ");
+                    }
+                    else
+                    {
+                        Console.Write(grid[i, j] + " ");
+                    }
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("Energy: " + energy);
+            Console.WriteLine("Health: " + health);
+            Console.WriteLine("\n# - ловушка, отнимает 5 энергии и 2 здоровья");
+            Console.WriteLine("% - враг, наносит 5 урона при контакте");
+            Console.WriteLine("\nU - чашка кофе, восстанавливает 10 стамины\n");
+            Console.WriteLine("\nПри нажатии Q вы ударите по области в одну клетку убивая всех врагов, но это тратит 1 стамину!\n Powered by Ak1ne \n");
+            ////Powered by Ak1ne
+        }
+
+        static void Main(string[] args)
+        {
+            InitializeGrid();
+            DrawGrid();
+
+            while (energy > 0 && health > 0)
+            {
+                ConsoleKeyInfo keyInfo = Console.ReadKey();
+                if (keyInfo.Key == ConsoleKey.Q) // обработка атаки при нажатии Q
+                {
+                    Attack();
+                }
+                else
+                {
+                    MovePlayer(keyInfo.Key);
+                }
+                HandleEnemies();
+                DrawGrid();
+
+                if (playerX == exitX && playerY == exitY)
+                {
+                    Console.WriteLine("Свет! Вы сбежали из лабиринта!");
+                    break;
+                }
+            }
+
+            if (energy <= 0 || health <= 0)
+            {
+                Console.WriteLine("Стамина или здоровье закончились, вы упали замертво посреди лабиринта...");
+            }
+        }
+
+        static void MovePlayer(ConsoleKey key)
+        {
+            int dx = 0, dy = 0;
+
+            if (key == ConsoleKey.UpArrow) dy = -1;
+            else if (key == ConsoleKey.DownArrow) dy = 1;
+            else if (key == ConsoleKey.LeftArrow) dx = -1;
+            else if (key == ConsoleKey.RightArrow) dx = 1;
+
+            int newX = Math.Clamp(playerX + dx, 0, gridSize - 1);
+            int newY = Math.Clamp(playerY + dy, 0, gridSize - 1);
+
+            if (grid[newY, newX] == 'U')
+            {
+                energy = Math.Min(energy + 10, 500);
+                grid[newY, newX] = '.';
+            }
+            else if (grid[newY, newX] == '#')
+            {
+                energy -= 5;
+                health -= 2;
+            }
+            else
+            {
+                energy--;
+            }
+
+            playerX = newX;
+            playerY = newY;
+        }
+
+        static void Attack()
+        {
+            energy -= 1;
+            for (int y = Math.Max(playerY - 1, 0); y <= Math.Min(playerY + 1, gridSize - 1); y++)
+            {
+                for (int x = Math.Max(playerX - 1, 0); x <= Math.Min(playerX + 1, gridSize - 1); x++)
+                {
+                    if (grid[y, x] == '%')
+                    {
+                        grid[y, x] = '.';
+                    }
+                }
+            }
+        }
+
+        static void HandleEnemies()
+        {
+            if (grid[playerY, playerX] == '%')
+            {
+                health -= 5;
+            }
+        }
+    }
+}
